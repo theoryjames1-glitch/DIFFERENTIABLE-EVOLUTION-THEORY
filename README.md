@@ -113,11 +113,62 @@ This **differentiable evolution theory** provides a continuous analogue to class
 
 By reframing evolution as gradient descent in differentiable loss landscapes, we obtain a novel theoretical model that unifies **biological inspiration** with **modern optimization frameworks**. This paradigm enables new experiments in artificial life, meta-learning, and open-ended intelligence, providing a foundation for "evolutionary differentiable ecosystems" within PyTorch.
 
----
+### PSEUDOCODE
 
-👉 Next step: I can either
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
-1. Expand this into a **full Jupyter/Colab notebook** with visualization of speciation and niches in 2D loss landscapes, or
-2. Push this toward a **longer academic-style paper** with citations and formal proofs.
+# --- Agent definition ---
+class Agent(nn.Module):
+    def __init__(self, input_dim=4, hidden_dim=16, output_dim=2):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.Tanh(),
+            nn.Linear(hidden_dim, output_dim),
+            nn.Tanh()
+        )
+    def forward(self, x):
+        return self.net(x)
 
-Which one would you like me to generate first?
+predator = Agent()
+prey = Agent()
+
+opt_pred = optim.SGD(predator.parameters(), lr=0.05)
+opt_prey = optim.SGD(prey.parameters(), lr=0.05)
+
+def run_episode(predator, prey):
+    pos_pred = torch.randn(2)
+    pos_prey = torch.randn(2)
+
+    for step in range(10):
+        state = torch.cat([pos_pred, pos_prey])
+        move_pred = predator(state)
+        move_prey = prey(state)
+
+        pos_pred = pos_pred + 0.1 * move_pred
+        pos_prey = pos_prey + 0.1 * move_prey
+
+    return torch.norm(pos_pred - pos_prey)
+
+# --- Training loop ---
+for gen in range(200):
+    # Predator update
+    opt_pred.zero_grad()
+    distance = run_episode(predator, prey)   # forward pass
+    loss_pred = distance                     # minimize distance
+    loss_pred.backward()
+    opt_pred.step()
+
+    # Prey update (new graph!)
+    opt_prey.zero_grad()
+    distance = run_episode(predator, prey)   # re-run forward pass
+    loss_prey = -distance                    # maximize distance
+    loss_prey.backward()
+    opt_prey.step()
+
+    if gen % 20 == 0:
+        print(f"Gen {gen:03d} | Distance: {distance.item():.3f}")
+'''
